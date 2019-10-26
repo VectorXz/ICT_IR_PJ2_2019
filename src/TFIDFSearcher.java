@@ -4,16 +4,83 @@
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
 public class TFIDFSearcher extends Searcher
-{	
+{
+	LinkedHashMap<String, Double> idf = new LinkedHashMap<String, Double>();
+	List<String> termIndex = null;
+	HashMap<Integer, double[]> docVector = new HashMap<Integer, double[]>();
+	HashMap<Integer, Double> docLength = new HashMap<Integer, Double>();
+	
 	public TFIDFSearcher(String docFilename) {
 		super(docFilename);
 		/************* YOUR CODE HERE ******************/
+		HashSet<String> allTerms = new HashSet<String>();
+		for (Document doc : this.documents) {
+			for (String term : doc.getTokens()) {
+				allTerms.add(term);
+			}
+		}
+		System.out.println(allTerms.size());
 		
+		
+		//Getting DF -> how many occurrences of this term in all documents
+		for (Document doc : this.documents) {
+			HashSet<String> uniq = new HashSet<String>(doc.getTokens());
+			for(String term : uniq) {
+				if(idf.containsKey(term)) {
+					idf.replace(term, idf.get(term)+1.0);
+				} else {
+					idf.put(term, 1.0);
+				}
+			}
+		}
+		
+		//System.out.println(idf);
+		
+		for (String term : idf.keySet()) {
+			double idfVal = Math.log10((this.documents.size()/idf.get(term))+1);
+			idf.replace(term, idfVal);
+		}
+		
+		//System.out.println(idf);
+		
+		termIndex = new ArrayList<String>(idf.keySet());
+		
+		
+		for (Document doc : this.documents) {
+			double tfidf[] = new double[idf.size()];
+			for(String term : doc.getTokens()) {
+				double tf = findTf(term, doc.getTokens());
+				tfidf[termIndex.indexOf(term)] = tf*idf.get(term);
+			}
+			
+			docVector.put(doc.getId(), tfidf);
+		}
+		
+		
+		
+		for (Document doc : this.documents) {
+			double sum = 0;
+			for(double val : docVector.get(doc.getId())) {
+				sum += Math.pow(val, 2);
+			}
+			sum = Math.sqrt(sum);
+			docLength.put(doc.getId(), sum);
+		}
+		
+		//System.out.println(docLength);
+		
+		//System.out.println("TF"+findTf("cancel", this.documents.get(0).getTokens()));
+		//System.out.println(idf.get("cancel"));
+		//System.out.println(tfidf.get("cancel"));
 		/***********************************************/
 	}
 	
@@ -22,47 +89,49 @@ public class TFIDFSearcher extends Searcher
 		/************* YOUR CODE HERE ******************/
 		Queue<SearchResult> result = new PriorityQueue<>(k, Collections.reverseOrder());
 		List<String> qTokens = tokenize(queryString);
-		List<String> allTerms = new ArrayList<String>();
-		for (Document doc : this.documents) {
-			allTerms.addAll(doc.getTokens());
-		}
-		List<Double> qWeight = new ArrayList<Double>();
-		for(String term : qTokens) {
-			double tf = findTf(term, allTerms);
-			
-			int df = findDf(term);
-			double idf = Math.log10(1+(this.documents.size()/df));
-			
-			qWeight.add(tf*idf);
-		}
-		double vq = 0.0;
-		for(Double num : qWeight) {
-			vq += Math.pow(num, 2);
-		}
-		vq = Math.sqrt(vq);
 		
-		//System.out.println(allTerms.size());
-		for (Document doc : this.documents) {
-			List<Double> allWeight = new ArrayList<Double>();
-			for(String term : doc.getTokens()) {
-				double tf = findTf(term, allTerms);
-				
-				int df = findDf(term);
-				double idf = Math.log10(1+(this.documents.size()/df));
-				
-				allWeight.add(tf*idf);
-	
+		
+		
+		//System.out.println(sum);
+		
+		for(Document doc : this.documents) {
+			double queryTfidf[] = new double[idf.size()];
+			for(String term : qTokens) {
+				double tf = findTf(term, qTokens);
+				queryTfidf[termIndex.indexOf(term)] = tf*idf.get(term);
 			}
-			
 			double sum = 0.0;
-			for(Double num : allWeight) {
-				sum += Math.pow(num, 2);
+			for(double val : queryTfidf) {
+				sum += Math.pow(val, 2);
 			}
 			sum = Math.sqrt(sum);
 			
-			System.out.println(allWeight.size()+" VS "+qWeight.size());
+			double queryLength = sum;
+			
+			double docTfidf[] = docVector.get(doc.getId());
+			double sumup = 0;
+			
+			for(int i=0;i<docTfidf.length;i++) {
+				sumup += docTfidf[i]*queryTfidf[i];
+			}
+			
+			double cos = sumup / (queryLength*docLength.get(doc.getId()));
+			
+			SearchResult temp = new SearchResult(doc, cos);
+			
+			if(result.size() < k || result.peek().getScore() < temp.getScore()) {
+				if(result.size() == k) {
+					SearchResult rem = result.remove();
+					//System.out.println("Remove : "+rem.getScore());
+				}
+				result.add(temp);
+				//System.out.println("Adding : "+temp.getScore());
+				//System.out.println(result);
+			}
 		}
-		return null;
+		List<SearchResult> r = new ArrayList<SearchResult>(result);
+		Collections.sort(r);
+		return r;
 		/***********************************************/
 	}
 	
