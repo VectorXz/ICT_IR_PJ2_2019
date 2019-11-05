@@ -28,7 +28,7 @@ public class TFIDFSearcher extends Searcher
 				allTerms.add(term);
 			}
 		}
-		System.out.println(allTerms.size());
+		//System.out.println(allTerms.size());
 		
 		
 		//Getting DF -> how many occurrences of this term in all documents
@@ -98,7 +98,13 @@ public class TFIDFSearcher extends Searcher
 			double queryTfidf[] = new double[idf.size()];
 			for(String term : qTokens) {
 				double tf = findTf(term, qTokens);
-				queryTfidf[termIndex.indexOf(term)] = tf*idf.get(term);
+				if(idf.get(term) != null) {
+					queryTfidf[termIndex.indexOf(term)] = tf*idf.get(term);
+				} else {
+					if(termIndex.indexOf(term) != -1) {
+						queryTfidf[termIndex.indexOf(term)] = 0.0;
+					}
+				}
 			}
 			double sum = 0.0;
 			for(double val : queryTfidf) {

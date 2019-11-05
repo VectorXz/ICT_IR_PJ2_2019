@@ -72,7 +72,24 @@ public class SearcherEvaluator {
 	public double[] getQueryPRF(Document query, Searcher searcher, int k)
 	{
 		/*********************** YOUR CODE HERE *************************/
-		return null;
+		List<SearchResult> returnDoc = searcher.search(query.getRawText(), k);
+		HashSet<Integer> returnDocId = new HashSet<Integer>();
+		
+		for(SearchResult result : returnDoc) {
+			returnDocId.add(result.getDocument().getId());
+		}
+		
+		HashSet<Integer> relevance = new HashSet<Integer>(returnDocId);
+		relevance.retainAll(answers.get(query.getId()));
+		
+		double precision = (double) relevance.size()/returnDocId.size();
+		double recall = (double) relevance.size()/answers.get(query.getId()).size();
+		double f1 = 0;
+		if(precision+recall != 0) {
+			f1 = (2*precision*recall)/(precision+recall);
+		}
+		double[] returndata = {precision,recall,f1};
+		return returndata;
 		/****************************************************************/
 	}
 	
@@ -86,7 +103,23 @@ public class SearcherEvaluator {
 	public double[] getAveragePRF(Searcher searcher, int k)
 	{
 		/*********************** YOUR CODE HERE *************************/
-		return null;
+		double avgprecision = 0.0;
+		double avgrecall = 0.0;
+		double avgf1 = 0.0;
+		
+		for(Document doc : this.getQueries()) {
+			double[] val = this.getQueryPRF(doc, searcher, k);
+			avgprecision += val[0];
+			avgrecall += val[1];
+			avgf1 += val[2];
+		}
+		
+		avgprecision /= this.getQueries().size();
+		avgrecall /= this.getQueries().size();
+		avgf1 /= this.getQueries().size();
+		
+		double[] returndata = {avgprecision, avgrecall, avgf1};
+		return returndata;
 		/****************************************************************/
 	}
 }
