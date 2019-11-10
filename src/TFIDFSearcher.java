@@ -1,6 +1,6 @@
-//Name: 
-//Section: 
-//ID: 
+//Name: Kanlayakorn Kesorn (SEC2), Patiphol Pussawong (SEC1), Supakarn Wongnil (SEC1) 
+//Section: 1,2
+//ID: 6088057, 6088136, 6088137
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,14 +24,13 @@ public class TFIDFSearcher extends Searcher
 		/************* YOUR CODE HERE ******************/
 		HashSet<String> allTerms = new HashSet<String>();
 		for (Document doc : this.documents) {
-			for (String term : doc.getTokens()) {
-				allTerms.add(term);
-			}
+			allTerms.addAll(doc.getTokens());
 		}
 		//System.out.println(allTerms.size());
 		
 		
 		//Getting DF -> how many occurrences of this term in all documents
+		
 		for (Document doc : this.documents) {
 			HashSet<String> uniq = new HashSet<String>(doc.getTokens());
 			for(String term : uniq) {
@@ -45,6 +44,8 @@ public class TFIDFSearcher extends Searcher
 		
 		//System.out.println(idf);
 		
+		//Calculating IDF
+		
 		for (String term : idf.keySet()) {
 			double idfVal = Math.log10((this.documents.size()/idf.get(term))+1);
 			idf.replace(term, idfVal);
@@ -52,9 +53,10 @@ public class TFIDFSearcher extends Searcher
 		
 		//System.out.println(idf);
 		
+		//Generating term index for indicate location of each terms in an array
 		termIndex = new ArrayList<String>(idf.keySet());
 		
-		
+		//calculating each document tfidf array
 		for (Document doc : this.documents) {
 			double tfidf[] = new double[idf.size()];
 			for(String term : doc.getTokens()) {
@@ -66,7 +68,7 @@ public class TFIDFSearcher extends Searcher
 		}
 		
 		
-		
+		//calculating each document length
 		for (Document doc : this.documents) {
 			double sum = 0;
 			for(double val : docVector.get(doc.getId())) {
@@ -95,6 +97,7 @@ public class TFIDFSearcher extends Searcher
 		//System.out.println(sum);
 		
 		for(Document doc : this.documents) {
+			//calculating query length and query vector
 			double queryTfidf[] = new double[idf.size()];
 			for(String term : qTokens) {
 				double tf = findTf(term, qTokens);
@@ -114,9 +117,11 @@ public class TFIDFSearcher extends Searcher
 			
 			double queryLength = sum;
 			
+			//get document vector
 			double docTfidf[] = docVector.get(doc.getId());
 			double sumup = 0;
 			
+			//doing dot product
 			for(int i=0;i<docTfidf.length;i++) {
 				sumup += docTfidf[i]*queryTfidf[i];
 			}
