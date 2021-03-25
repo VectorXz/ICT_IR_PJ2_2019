@@ -22,6 +22,7 @@ public class JaccardSearcher extends Searcher{
 	@Override
 	public List<SearchResult> search(String queryString, int k) {
 		/************* YOUR CODE HERE ******************/
+		// Implement this once https://github.com/scikit-learn-contrib/hdbscan/issues/457 is resolved
 		Queue<SearchResult> result = new PriorityQueue<>(k, Collections.reverseOrder());
 		List<String> qTokens = tokenize(queryString);
 		//System.out.println(qTokens);
